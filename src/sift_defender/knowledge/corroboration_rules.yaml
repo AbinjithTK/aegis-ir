@@ -1,0 +1,97 @@
+# Corroboration Rules — What to cross-check when you find something
+# Used by the self-correction engine to identify gaps
+
+rules:
+  - trigger: "binary_in_amcache"
+    check_next:
+      - tool: "parse_prefetch"
+        reason: "Confirm execution (Amcache = presence only)"
+      - tool: "get_scheduled_tasks"
+        reason: "Binary may execute via task (no Prefetch generated)"
+      - tool: "get_services"
+        reason: "Binary may execute as service"
+    confidence_if_confirmed: "CONFIRMED"
+    confidence_if_only_amcache: "INFERRED"
+
+  - trigger: "binary_executed_prefetch"
+    check_next:
+      - tool: "parse_evtx"
+        args: {log_name: "Security", event_ids: [4688]}
+        reason: "Get command line and parent process"
+      - tool: "parse_amcache"
+        reason: "Corroborate presence + get first-seen time"
+    confidence_if_confirmed: "CONFIRMED"
+
+  - trigger: "service_installed_7045"
+    check_next:
+      - tool: "parse_mft"
+        reason: "Verify binary exists on disk at expected path"
+      - tool: "parse_evtx"
+        args: {log_name: "Security", event_ids: [4688]}
+        reason: "Identify who/what installed the service"
+    contradiction_if: "Binary not found in MFT at service path"
+
+  - trigger: "scheduled_task_found"
+    check_next:
+      - tool: "parse_evtx"
+        args: {log_name: "TaskScheduler", event_ids: [106, 200]}
+        reason: "Confirm task creation time and execution history"
+      - tool: "parse_evtx"
+        args: {log_name: "Security", event_ids: [4688]}
+        reason: "Identify process that created the task"
+
+  - trigger: "network_connection_external"
+    check_next:
+      - tool: "vol_pslist"
+        reason: "Identify process owning the connection"
+      - tool: "extract_iocs"
+        reason: "Add IP/domain to IOC list"
+      - tool: "lookup_threat_intel"
+        reason: "Check if destination is known-malicious"
+
+  - trigger: "process_tree_anomaly"
+    description: "Unusual parent-child relationship (e.g., Word → PowerShell)"
+    check_next:
+      - tool: "vol_cmdline"
+        reason: "Get full command line arguments"
+      - tool: "vol_dlllist"
+        reason: "Check loaded DLLs for suspicious modules"
+      - tool: "parse_prefetch"
+        reason: "Confirm execution on disk"
+    common_anomalies:
+      - "winword.exe → powershell.exe (macro execution)"
+      - "outlook.exe → winword.exe → cmd.exe (email → document → shell)"
+      - "services.exe → powershell.exe (service-based execution)"
+      - "explorer.exe → rundll32.exe → unusual DLL path"
+      - "wscript.exe → powershell.exe (script-based dropper)"
+
+  - trigger: "lateral_movement_indicators"
+    description: "Evidence of movement between hosts"
+    check_next:
+      - tool: "parse_evtx"
+        args: {log_name: "Security", event_ids: [4624, 4625]}
+        reason: "Logon events — Type 3 (network) or Type 10 (RDP)"
+      - tool: "get_services"
+        reason: "Check for PsExec-style service installation"
+    indicators:
+      - "Type 3 logon from internal IP"
+      - "New service 'PSEXESVC' or similar"
+      - "Remote scheduled task creation"
+      - "WMI event subscription from remote host"
+
+  - trigger: "anti_forensics_suspected"
+    description: "Evidence of attacker covering tracks"
+    check_next:
+      - tool: "parse_evtx"
+        args: {log_name: "Security", event_ids: [1102]}
+        reason: "Check if Security log was cleared"
+      - tool: "parse_evtx"
+        args: {log_name: "System", event_ids: [104]}
+        reason: "Check if System log was cleared"
+      - tool: "parse_usn_journal"
+        reason: "USN journal harder to tamper — may have surviving records"
+    indicators:
+      - "Missing Prefetch files for known-executed binaries"
+      - "Event log gaps (expected events missing)"
+      - "Timestomped MFT entries (MACE inconsistencies)"
+      - "Cleared event logs (Event 1102/104)"

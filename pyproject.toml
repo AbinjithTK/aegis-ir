@@ -1,0 +1,96 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sift-defender"
+version = "0.1.0"
+description = "Autonomous self-correcting forensic investigation agent for SIFT Workstation"
+requires-python = ">=3.10,<3.13"
+license = {text = "MIT"}
+authors = [
+    {name = "SIFT Defender Team"},
+]
+keywords = ["forensics", "incident-response", "ai-agent", "dfir", "sift", "mcp", "phoenix"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    # Agent Framework (Google ADK)
+    "google-adk>=1.32.0",
+    "google-genai>=1.9.0",
+    
+    # Phoenix Observability + Self-Introspection (Open-Source)
+    "arize-phoenix>=7.0",
+    "openinference-instrumentation-google-adk>=0.1.11",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    
+    # Phoenix Evals (Hallucination Detection, LLM-as-Judge)
+    "arize-phoenix-evals>=0.17.0",
+    
+    # Web Interface
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "websockets>=12.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.9",
+    
+    # Data & Validation
+    "pydantic>=2.10.0",
+    "pyyaml>=6.0",
+    
+    # Database & Migrations (Enterprise)
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    
+    # Authentication
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt>=4.0.0",
+    "email-validator>=2.0.0",
+    "httpx>=0.27.0",
+    
+    # Utilities
+    "python-dotenv>=1.0.1",
+    "structlog>=24.0.0",
+    "aiofiles>=24.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0",
+    "hypothesis>=6.100.0",
+    "ruff>=0.15.0",
+    "mypy>=1.15.0",
+]
+
+[project.scripts]
+sift-defender = "sift_defender.main:main"
+
+[project.urls]
+Homepage = "https://github.com/YOUR_ORG/sift-defender"
+Repository = "https://github.com/YOUR_ORG/sift-defender"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sift_defender"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

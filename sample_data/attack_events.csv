@@ -1,0 +1,13 @@
+_time,host,EventCode,user,process_name,parent_process_name,command_line,src_ip,dest_ip,dest_port,protocol,file_name,file_path,QueryName,QueryResults,Logon_Type,TaskName,message,sourcetype
+2026-06-09T08:05:00Z,server-04,4624,m.chen,,,10.20.3.100,,,,,,,2,,WinEventLog
+2026-06-09T08:06:00Z,server-04,1,m.chen,outlook.exe,explorer.exe,outlook.exe,,,,,,,,,,sysmon
+2026-06-09T08:07:30Z,server-04,1,m.chen,winword.exe,outlook.exe,WINWORD.EXE invoice-document-share.docm,,,,,,,,,,sysmon
+2026-06-09T08:07:35Z,server-04,1,m.chen,powershell.exe,winword.exe,powershell.exe -enc VwByAGkAdABlAC0ASABvAHMAdA==,,,,,,,,,,sysmon
+2026-06-09T08:07:38Z,server-04,22,m.chen,powershell.exe,,,,,,,,c2-backup-server.org,198.51.100.42,,,sysmon
+2026-06-09T08:07:40Z,server-04,,,,,10.20.3.16,198.51.100.42,443,TCP,,,,,,,firewall
+2026-06-09T08:07:42Z,server-04,1,m.chen,rundll32.exe,powershell.exe,rundll32.exe update.dat EntryPoint,,,,,,,,,,sysmon
+2026-06-09T08:07:45Z,server-04,11,,powershell.exe,,,,,,svc_update.exe,C:\ProgramData\svc_update.exe,,,,,sysmon
+2026-06-09T08:07:48Z,server-04,4698,SYSTEM,,,,,,,,,,,,WindowsUpdate,Scheduled task created,WinEventLog
+2026-06-09T08:10:00Z,server-04,,,,,10.20.3.16,198.51.100.42,443,TCP,,,,,,,firewall
+2026-06-09T08:15:00Z,server-04,,,,,10.20.3.16,198.51.100.42,443,TCP,,,,,,,firewall
+2026-06-09T08:15:00Z,server-05,4624,m.chen,,,10.20.3.16,,,,,,,3,,Network logon from server-04,WinEventLog

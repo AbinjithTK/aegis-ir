@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Environment secrets (NEVER commit)
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+/cases/
+/tmp/
+*.log
+
+# Phoenix local data
+phoenix_data/
+
+# Root-level test/debug scripts (contain API keys)
+test_*.py
+run_*.py
+fix_*.py
+find_*.py
+insert_*.py
+load_*.py
+check_*.py
+debug_*.py
+verify_*.py
+audit_tools.py

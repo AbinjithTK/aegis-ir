@@ -1,0 +1,98 @@
+# Forensic Caveats — What each artifact PROVES and what it DOESN'T
+# Injected into every tool response to prevent agent misinterpretation
+
+amcache:
+  proves: "File was PRESENT on the system at some point"
+  does_not_prove: "File was executed"
+  common_mistake: "Assuming Amcache entry = execution"
+  corroborate_with: ["prefetch", "evtx_4688", "shimcache"]
+  note: "First-seen timestamp indicates when the system first noticed the file"
+
+prefetch:
+  proves: "File was EXECUTED (interactively or by user-session process)"
+  does_not_prove: "Who or what triggered the execution"
+  common_mistake: "Assuming all executables generate Prefetch (services/tasks may not)"
+  corroborate_with: ["evtx_4688", "amcache"]
+  note: "Max 1024 Prefetch files on Windows 10+. Last modified ≈ last run time."
+
+shimcache:
+  proves: "File was PRESENT (existed in the filesystem at some point)"
+  does_not_prove: "File was executed"
+  common_mistake: "Conflating Shimcache with execution evidence"
+  corroborate_with: ["amcache", "prefetch"]
+  note: "Order in Shimcache ≠ execution order"
+
+mft:
+  proves: "File metadata (name, size, timestamps, parent directory)"
+  does_not_prove: "File content or execution"
+  common_mistake: "Trusting MFT timestamps without cross-reference (timestomping)"
+  corroborate_with: ["usn_journal", "evtx"]
+  note: "4 timestamps: Created, Modified, Accessed, Entry-Modified (MACE)"
+
+usn_journal:
+  proves: "Filesystem changes occurred (create, delete, rename, extend)"
+  does_not_prove: "Who made the change"
+  common_mistake: "Assuming USN journal covers the entire timeline (it has a size cap)"
+  corroborate_with: ["mft", "evtx_4688"]
+  note: "More tamper-resistant than MFT timestamps"
+
+evtx_security:
+  proves: "Security audit events as recorded by Windows"
+  does_not_prove: "Events weren't cleared (check Event 1102)"
+  common_mistake: "Assuming all events are present (audit policy may not capture everything)"
+  corroborate_with: ["mft", "prefetch"]
+  key_events:
+    4624: "Logon (Type 3=network, Type 10=RDP, Type 2=interactive)"
+    4625: "Failed logon"
+    4672: "Special privileges assigned (admin)"
+    4688: "Process creation (with command line if policy enabled)"
+    4689: "Process exit"
+    1102: "Security log cleared (anti-forensics indicator)"
+
+evtx_system:
+  key_events:
+    7045: "Service installed"
+    7036: "Service started/stopped"
+    104: "System log cleared"
+    6005: "Event log service started (boot)"
+    6006: "Event log service stopped (shutdown)"
+
+evtx_task_scheduler:
+  key_events:
+    106: "Task registered (created)"
+    141: "Task removed (deleted)"
+    200: "Task executed"
+    201: "Task completed"
+
+volatility_pslist:
+  proves: "Process was running at time of memory capture"
+  does_not_prove: "Process is malicious"
+  common_mistake: "Reporting every unknown process as suspicious"
+  corroborate_with: ["pstree", "netscan", "cmdline"]
+  note: "DKOM-hidden processes won't appear — use psscan"
+
+volatility_netscan:
+  proves: "Network connection existed at time of memory capture"
+  does_not_prove: "Data was exfiltrated"
+  common_mistake: "Assuming all external connections are C2"
+  corroborate_with: ["pslist (identify owning process)", "threat_intel"]
+
+volatility_malfind:
+  proves: "Memory region has suspicious characteristics (RWX, no file backing)"
+  does_not_prove: "Code is malicious"
+  common_mistake: "Reporting all malfind hits as malware (browsers, .NET have RWX regions)"
+  corroborate_with: ["process context", "dlllist", "handles"]
+  note: "High false positive rate — always check process context"
+
+scheduled_tasks:
+  proves: "Task definition exists"
+  does_not_prove: "Task executed successfully"
+  common_mistake: "Assuming task presence = execution"
+  corroborate_with: ["evtx_task_scheduler (Event 200)", "prefetch (if applicable)"]
+  note: "Binaries launched by tasks may NOT generate Prefetch entries"
+
+registry_run_keys:
+  proves: "Autorun entry is configured"
+  does_not_prove: "The program actually ran at startup"
+  common_mistake: "Not checking if the referenced binary still exists"
+  corroborate_with: ["prefetch", "evtx_4688"]

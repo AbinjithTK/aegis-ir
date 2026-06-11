@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS-IR — Autonomous Incident Response</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #090b11;
+            --surface: #0e111b;
+            --card: #111521;
+            --card-border: #1c2233;
+            --hover: rgba(14, 17, 27, 0.3);
+            --text: #eef0f7;
+            --text-muted: #7f889e;
+            --text-dim: #545c71;
+            --accent: #6293ff;
+            --accent-soft: rgba(98, 147, 255, 0.12);
+            --success: #3ad896;
+            --success-soft: rgba(58, 216, 150, 0.1);
+            --warning: #ffc143;
+            --warning-soft: rgba(255, 193, 67, 0.1);
+            --danger: #ff5e62;
+            --danger-soft: rgba(255, 94, 98, 0.1);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --radius-pill: 12px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: 72px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            gap: 12px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .nav-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            color: var(--text-dim);
+        }
+
+        .nav-item:hover { background: var(--accent-soft); color: var(--text-muted); }
+        .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+
+        .sidebar-indicator {
+            position: absolute;
+            left: -1px;
+            width: 3px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 2px;
+            top: 98px;
+            transition: top 0.3s ease;
+        }
+
+        .nav-item svg { width: 18px; height: 18px; }
+
+        /* === MAIN CONTENT === */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* === TOP BAR === */
+        .topbar {
+            height: 64px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .topbar-left h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .topbar-left .subtitle {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .status-pill.ready {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .status-pill.running {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .status-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-pill.running .dot { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .btn-primary {
+            padding: 10px 24px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+
+        /* === CONTENT WRAPPER === */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* === METRICS ROW === */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .metric-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 24px;
+            width: 32px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .metric-card.green::before { background: var(--success); }
+        .metric-card.blue::before { background: var(--accent); }
+        .metric-card.red::before { background: var(--danger); }
+        .metric-card.orange::before { background: var(--warning); }
+
+        .metric-card .label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .metric-card .value {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .metric-card.green .value { color: var(--success); }
+        .metric-card.blue .value { color: var(--accent); }
+        .metric-card.red .value { color: var(--danger); }
+        .metric-card.orange .value { color: var(--warning); }
+
+        .metric-card .sub {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .metric-card.green .sub { color: var(--success); }
+        .metric-card.blue .sub,
+        .metric-card.red .sub,
+        .metric-card.orange .sub { color: var(--text-dim); }
+
+        /* === BOTTOM ROW: Cases + Activity Feed === */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 468px;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .panel-header .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        .panel-header .live-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--success);
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* === CASES TABLE === */
+        .cases-row {
+            display: grid;
+            grid-template-columns: 140px 80px 80px 60px 1fr;
+            align-items: center;
+            padding: 14px 24px;
+            font-size: 13px;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .cases-row:nth-child(odd) { background: var(--hover); }
+        .cases-row:hover { background: rgba(98, 147, 255, 0.04); }
+
+        .cases-row .case-id {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .cases-row .status-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .status-badge.complete { background: var(--success-soft); color: var(--success); }
+        .status-badge.review { background: var(--warning-soft); color: var(--warning); }
+        .status-badge.running { background: var(--accent-soft); color: var(--accent); }
+        .status-badge.error { background: var(--danger-soft); color: var(--danger); }
+
+        .cases-row .findings { color: var(--text-muted); font-size: 12px; }
+        .cases-row .accuracy { font-weight: 600; color: var(--text); font-size: 13px; }
+        .cases-row .accuracy.perfect { color: var(--success); }
+        .cases-row .time { color: var(--text-dim); font-size: 12px; text-align: right; }
+
+        /* === ACTIVITY FEED === */
+        .feed-entry {
+            display: flex;
+            gap: 12px;
+            padding: 8px 24px;
+        }
+
+        .feed-entry .feed-bar {
+            width: 3px;
+            min-height: 38px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .feed-entry.tool .feed-bar { background: var(--accent); }
+        .feed-entry.correction .feed-bar { background: var(--warning); }
+        .feed-entry.finding .feed-bar { background: var(--success); }
+        .feed-entry.blocked .feed-bar { background: var(--danger); }
+
+        .feed-entry .feed-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .feed-entry .feed-time {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .feed-entry .feed-message {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* === INVESTIGATION VIEW (3-column) === */
+        .investigation-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr 380px;
+            gap: 1px;
+            background: var(--card-border);
+            flex: 1;
+            min-height: 0;
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .investigation-layout > .panel {
+            border-radius: 0;
+            border: none;
+        }
+
+        /* === EVIDENCE PANEL === */
+        .evidence-info { padding: 20px; }
+        .evidence-info .field { margin-bottom: 16px; }
+        .evidence-info .field-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 4px;
+        }
+        .evidence-info .field-value {
+            font-size: 12px;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        /* === FINDING CARDS === */
+        .finding-card {
+            background: var(--surface);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px;
+            margin: 8px 12px;
+        }
+
+        .finding-card .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .finding-card .finding-id { font-size: 10px; color: var(--text-dim); }
+
+        .finding-card .finding-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge.confirmed { background: var(--success-soft); color: var(--success); }
+        .badge.inferred { background: var(--warning-soft); color: var(--warning); }
+        .badge.mitre { background: rgba(155, 100, 255, 0.12); color: #9b64ff; }
+
+        .finding-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-approve { background: var(--success-soft); color: var(--success); }
+        .btn-reject { background: var(--danger-soft); color: var(--danger); }
+        .btn-more { background: var(--accent-soft); color: var(--accent); }
+
+        /* === FORMS (for new investigation modal) === */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 32px;
+            width: 460px;
+            max-width: 90vw;
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        textarea.form-input { min-height: 80px; resize: vertical; }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-secondary:hover { border-color: var(--text-dim); }
+
+        /* === EMPTY STATE === */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        .empty-state .icon { font-size: 28px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-state .title { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .empty-state .desc { font-size: 11px; }
+
+        /* === SCROLLBAR === */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+        /* === HIDDEN === */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-indicator" id="sidebar-indicator"></div>
+
+        <div class="nav-item active" data-page="dashboard" title="Dashboard" onclick="navigateTo('dashboard')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="1" y="1" width="7" height="7" rx="1.5"/>
+                <rect x="10" y="1" width="7" height="7" rx="1.5"/>
+                <rect x="1" y="10" width="7" height="7" rx="1.5"/>
+                <rect x="10" y="10" width="7" height="7" rx="1.5"/>
+            </svg>
+        </div>
+
+        <div class="nav-item" data-page="investigate" title="New Investigation" onclick="showNewInvestigationModal()">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polygon points="8,1 15,5 15,13 8,17 1,13 1,5"/>
+                <line x1="8" y1="1" x2="8" y2="17"/>
+                <line x1="1" y1="5" x2="15" y2="5"/>
+            </svg>
+        </div>
+
+        <div class="nav-item" data-page="cases" title="Cases" onclick="navigateTo('cases')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="14" height="14" rx="2"/>
+                <line x1="5" y1="6" x2="13" y2="6"/>
+                <line x1="5" y1="9" x2="13" y2="9"/>
+                <line x1="5" y1="12" x2="10" y2="12"/>
+            </svg>
+        </div>
+
+        <div class="nav-item" data-page="metrics" title="Metrics" onclick="navigateTo('metrics')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="1,14 5,8 9,11 13,4 17,7"/>
+                <line x1="1" y1="16" x2="17" y2="16"/>
+            </svg>
+        </div>
+
+        <div class="nav-item" data-page="settings" title="Settings" onclick="navigateTo('settings')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="9" r="3"/>
+                <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3 3l1.5 1.5M13.5 13.5L15 15M15 3l-1.5 1.5M4.5 13.5L3 15"/>
+            </svg>
+        </div>
+
+        <div class="nav-item" data-page="help" title="Help" onclick="navigateTo('dashboard')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="9" r="7.5"/>
+                <path d="M6.5 6.5a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2.5 2-2.5 3"/>
+                <circle cx="9" cy="13.5" r="0.5" fill="currentColor"/>
+            </svg>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main">
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1 id="page-title">Dashboard</h1>
+                <span class="subtitle" id="page-subtitle">Welcome back, Analyst</span>
+            </div>
+            <div class="topbar-right">
+                <div class="status-pill ready" id="agent-status">
+                    <span class="dot"></span>
+                    <span id="status-text">Agent Ready</span>
+                </div>
+                <button class="btn-primary" onclick="showNewInvestigationModal()">+ New Investigation</button>
+            </div>
+        </header>
+
+        <!-- HOME VIEW (Dashboard) -->
+        <div class="content" id="home-view">
+            <!-- Metrics -->
+            <div class="metrics-row">
+                <div class="metric-card green">
+                    <div class="label">Accuracy</div>
+                    <div class="value" id="metric-accuracy">—</div>
+                    <div class="sub">guardrail pass rate</div>
+                </div>
+                <div class="metric-card blue">
+                    <div class="label">Cases</div>
+                    <div class="value" id="metric-cases">0</div>
+                    <div class="sub">investigations</div>
+                </div>
+                <div class="metric-card red">
+                    <div class="label">Blocked</div>
+                    <div class="value" id="metric-blocked">0</div>
+                    <div class="sub">hallucinations prevented</div>
+                </div>
+                <div class="metric-card orange">
+                    <div class="label">Corrections</div>
+                    <div class="value" id="metric-corrections">0</div>
+                    <div class="sub">contradictions resolved</div>
+                </div>
+            </div>
+
+            <!-- Cases + Activity Feed -->
+            <div class="bottom-row">
+                <!-- Cases Panel -->
+                <div class="panel">
+                    <div class="panel-header">Recent Investigations</div>
+                    <div class="panel-body" id="cases-panel">
+                        <div class="empty-state" id="no-cases">
+                            <div class="icon">🔍</div>
+                            <div class="title">No investigations yet</div>
+                            <div class="desc">Click "+ New Investigation" or wait for a Splunk alert</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Feed -->
+                <div class="panel">
+                    <div class="panel-header">
+                        Agent Activity
+                        <span class="live-dot" id="feed-live-dot" style="display:none;"></span>
+                        <span class="live-label" id="feed-live-label" style="display:none;">Live</span>
+                    </div>
+                    <div class="panel-body" id="activity-feed">
+                        <div class="empty-state">
+                            <div class="icon">📡</div>
+                            <div class="title">Listening for activity</div>
+                            <div class="desc">Agent events will appear here in real-time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVESTIGATION VIEW (hidden until active) -->
+        <div class="content hidden" id="investigation-view">
+            <div class="investigation-layout">
+                <!-- Left: Evidence -->
+                <div class="panel">
+                    <div class="panel-header">Evidence</div>
+                    <div class="panel-body evidence-info" id="evidence-panel">
+                        <div class="field">
+                            <div class="field-label">Case ID</div>
+                            <div class="field-value" id="ev-case">-</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Evidence Path</div>
+                            <div class="field-value" id="ev-path">-</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Source</div>
+                            <div class="field-value" id="ev-source">Splunk + SIFT</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Started</div>
+                            <div class="field-value" id="ev-started">-</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Tools Available</div>
+                            <div class="field-value">31 (15 SIFT + 10 Splunk + 4 Phoenix + 2 QC)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Live Feed -->
+                <div class="panel">
+                    <div class="panel-header">
+                        Live Agent Feed
+                        <span class="live-dot" id="inv-live-dot"></span>
+                        <span class="live-label" id="inv-live-label">Live</span>
+                    </div>
+                    <div class="panel-body" id="live-feed"></div>
+                </div>
+
+                <!-- Right: Findings -->
+                <div class="panel">
+                    <div class="panel-header">
+                        Findings
+                        <span id="findings-count" style="font-size:11px; color:var(--text-dim)"></span>
+                    </div>
+                    <div class="panel-body" id="findings-panel"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div class="content hidden" id="settings-view" style="max-width:800px;">
+            <h2 style="font-size:18px; font-weight:600; margin-bottom:24px;">Settings</h2>
+
+            <!-- Splunk -->
+            <div class="panel" style="margin-bottom:16px;">
+                <div class="panel-header">
+                    Splunk SIEM
+                    <span class="status-badge" id="splunk-status-badge" style="margin-left:auto;">—</span>
+                </div>
+                <div class="panel-body" style="padding:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group"><label class="form-label">Host</label><input class="form-input" id="set-splunk-host" placeholder="localhost"></div>
+                        <div class="form-group"><label class="form-label">Port</label><input class="form-input" id="set-splunk-port" placeholder="8089"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Bearer Token</label><input class="form-input" id="set-splunk-token" type="password" placeholder="eyJ..."></div>
+                    <button class="btn-primary" onclick="saveSettings('splunk')" style="margin-top:8px;">Save & Test</button>
+                </div>
+            </div>
+
+            <!-- Phoenix -->
+            <div class="panel" style="margin-bottom:16px;">
+                <div class="panel-header">
+                    Phoenix Observability
+                    <span class="status-badge" id="phoenix-status-badge" style="margin-left:auto;">—</span>
+                </div>
+                <div class="panel-body" style="padding:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label class="form-label">Mode</label>
+                            <select class="form-input" id="set-phoenix-mode">
+                                <option value="local">Local (self-hosted)</option>
+                                <option value="cloud">Cloud (app.phoenix.arize.com)</option>
+                                <option value="memory">Memory (testing)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label class="form-label">Project Name</label><input class="form-input" id="set-phoenix-project" placeholder="aegis-ir"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Endpoint</label><input class="form-input" id="set-phoenix-endpoint" placeholder="http://localhost:6006"></div>
+                    <div class="form-group"><label class="form-label">API Key (Cloud only)</label><input class="form-input" id="set-phoenix-key" type="password" placeholder="px_live_..."></div>
+                    <button class="btn-primary" onclick="saveSettings('phoenix')" style="margin-top:8px;">Save & Reconnect</button>
+                </div>
+            </div>
+
+            <!-- Gemini -->
+            <div class="panel" style="margin-bottom:16px;">
+                <div class="panel-header">
+                    Gemini / Vertex AI
+                    <span class="status-badge" id="gemini-status-badge" style="margin-left:auto;">—</span>
+                </div>
+                <div class="panel-body" style="padding:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group"><label class="form-label">GCP Project</label><input class="form-input" id="set-gemini-project" placeholder="my-project-123"></div>
+                        <div class="form-group"><label class="form-label">Region</label><input class="form-input" id="set-gemini-location" placeholder="us-central1"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Model</label>
+                        <select class="form-input" id="set-gemini-model">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (fast, cheap)</option>
+                            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (fastest)</option>
+                            <option value="gemini-2.5-pro">gemini-2.5-pro (best quality)</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="saveSettings('gemini')" style="margin-top:8px;">Save</button>
+                </div>
+            </div>
+
+            <!-- SIFT -->
+            <div class="panel" style="margin-bottom:16px;">
+                <div class="panel-header">
+                    SIFT Forensic Tools
+                    <span class="status-badge" id="sift-status-badge" style="margin-left:auto;">—</span>
+                </div>
+                <div class="panel-body" style="padding:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label class="form-label">Mode</label>
+                            <select class="form-input" id="set-sift-mode">
+                                <option value="local">Local (WSL / native Linux)</option>
+                                <option value="cloud">Cloud (gRPC to SIFT VM)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label class="form-label">Evidence Path</label><input class="form-input" id="set-sift-evidence" placeholder="/mnt/evidence"></div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Cloud Endpoint (gRPC)</label><input class="form-input" id="set-sift-endpoint" placeholder="10.x.x.x:50051"></div>
+                    <button class="btn-primary" onclick="saveSettings('sift')" style="margin-top:8px;">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CASES VIEW -->
+        <div class="content hidden" id="cases-view">
+            <div class="panel" style="height:100%;">
+                <div class="panel-header">All Investigations</div>
+                <div class="panel-body" id="cases-full-list">
+                    <div class="empty-state"><div class="icon">🔍</div><div class="title">No investigations yet</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- METRICS VIEW -->
+        <div class="content hidden" id="metrics-view">
+            <div class="metrics-row">
+                <div class="metric-card green">
+                    <div class="label">Accuracy</div>
+                    <div class="value" id="metrics-accuracy-full">—</div>
+                    <div class="sub">guardrail pass rate</div>
+                </div>
+                <div class="metric-card blue">
+                    <div class="label">Total Cases</div>
+                    <div class="value" id="metrics-cases-full">0</div>
+                    <div class="sub">investigations run</div>
+                </div>
+                <div class="metric-card red">
+                    <div class="label">Hallucinations Blocked</div>
+                    <div class="value" id="metrics-blocked-full">0</div>
+                    <div class="sub">findings prevented</div>
+                </div>
+                <div class="metric-card orange">
+                    <div class="label">Total Findings</div>
+                    <div class="value" id="metrics-findings-full">0</div>
+                    <div class="sub">approved findings</div>
+                </div>
+            </div>
+            <div class="bottom-row" style="margin-top:16px;">
+                <div class="panel">
+                    <div class="panel-header">System Info</div>
+                    <div class="panel-body" style="padding:20px;" id="metrics-system-info">
+                        <div class="field"><div class="field-label">Agent Model</div><div class="field-value" id="mi-model">—</div></div>
+                        <div class="field"><div class="field-label">Tools Available</div><div class="field-value">31 (15 SIFT + 10 Splunk + 4 Phoenix + 2 QC)</div></div>
+                        <div class="field"><div class="field-label">Phoenix Project</div><div class="field-value" id="mi-phoenix">—</div></div>
+                        <div class="field"><div class="field-label">Splunk Host</div><div class="field-value" id="mi-splunk">—</div></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">Links</div>
+                    <div class="panel-body" style="padding:20px;">
+                        <div class="field"><div class="field-label">Phoenix Dashboard</div><div class="field-value"><a href="http://localhost:6006" target="_blank" style="color:var(--accent);">localhost:6006</a></div></div>
+                        <div class="field"><div class="field-label">Splunk Web</div><div class="field-value"><a href="http://localhost:8000" target="_blank" style="color:var(--accent);">localhost:8000</a></div></div>
+                        <div class="field"><div class="field-label">Alert Webhook</div><div class="field-value" style="font-size:11px;">POST /api/splunk-alert</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW INVESTIGATION MODAL -->
+    <div class="modal-overlay hidden" id="investigation-modal">
+        <div class="modal">
+            <h2>New Investigation</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Investigation Mode</label>
+                <select class="form-input" id="input-mode" onchange="toggleEvidenceFields()">
+                    <option value="splunk_only">Splunk Only (log analysis)</option>
+                    <option value="sift_only">SIFT Only (disk forensics)</option>
+                    <option value="combined" selected>Combined (Splunk + SIFT)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="evidence-path-group">
+                <label class="form-label">Evidence Path (SIFT)</label>
+                <input class="form-input" id="input-evidence" type="text" value="/mnt/evidence" placeholder="/mnt/evidence">
+                <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">Mounted directory or disk image path in WSL/Linux</div>
+            </div>
+
+            <div class="form-group" id="splunk-host-group">
+                <label class="form-label">Target Host (Splunk)</label>
+                <input class="form-input" id="input-hostname" type="text" value="" placeholder="server-04 (leave empty for all hosts)">
+                <div style="font-size:10px; color:var(--text-dim); margin-top:4px;">Hostname to investigate in Splunk logs</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Directive</label>
+                <textarea class="form-input" id="input-directive" placeholder="Investigation instructions...">Investigate for signs of compromise. Identify the attack chain with MITRE ATT&CK mapping.</textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn-primary" onclick="startInvestigation()">Start Investigation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentCaseId = null;
+        let cases = [];
+
+        // === BOOT: Load real data on page load ===
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMetrics();
+            loadCases();
+            loadSystemStatus();
+            // Poll metrics every 10s
+            setInterval(loadMetrics, 10000);
+        });
+
+        async function loadMetrics() {
+            try {
+                const r = await fetch('/api/metrics');
+                const m = await r.json();
+                document.getElementById('metric-accuracy').textContent = m.accuracy ? m.accuracy + '%' : '—';
+                document.getElementById('metric-cases').textContent = m.cases || 0;
+                document.getElementById('metric-blocked').textContent = m.blocked || 0;
+                document.getElementById('metric-corrections').textContent = m.corrections || 0;
+            } catch(e) {}
+        }
+
+        async function loadCases() {
+            try {
+                const r = await fetch('/api/cases');
+                const data = await r.json();
+                if (data.cases && data.cases.length > 0) {
+                    cases = data.cases.map(c => ({
+                        id: c.case_id,
+                        status: c.status,
+                        findings: c.findings_count || 0,
+                        accuracy: '—',
+                        time: ''
+                    }));
+                    renderCases();
+                }
+            } catch(e) {}
+        }
+
+        async function loadSystemStatus() {
+            try {
+                const r = await fetch('/api/status');
+                const s = await r.json();
+                // Update subtitle with connection info
+                const parts = [];
+                if (s.splunk && s.splunk.connected) parts.push('Splunk ✓');
+                if (s.phoenix && s.phoenix.connected) parts.push('Phoenix ✓');
+                if (s.gemini && s.gemini.connected) parts.push('Gemini ✓');
+                if (parts.length > 0) {
+                    document.getElementById('page-subtitle').textContent = parts.join(' · ');
+                }
+            } catch(e) {}
+        }
+
+        // --- Navigation ---
+        function navigateTo(page) {
+            // Hide all views
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('investigation-view').classList.add('hidden');
+            document.getElementById('settings-view').classList.add('hidden');
+            document.getElementById('cases-view').classList.add('hidden');
+            document.getElementById('metrics-view').classList.add('hidden');
+
+            if (page === 'dashboard') {
+                document.getElementById('home-view').classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Dashboard';
+                document.getElementById('page-subtitle').textContent = '';
+                loadMetrics(); loadCases(); loadSystemStatus();
+            } else if (page === 'cases') {
+                document.getElementById('cases-view').classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Cases';
+                document.getElementById('page-subtitle').textContent = 'All Investigations';
+                loadFullCasesList();
+            } else if (page === 'metrics') {
+                document.getElementById('metrics-view').classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Metrics';
+                document.getElementById('page-subtitle').textContent = 'Performance & System';
+                loadMetricsView();
+            } else if (page === 'settings') {
+                document.getElementById('settings-view').classList.remove('hidden');
+                document.getElementById('page-title').textContent = 'Settings';
+                document.getElementById('page-subtitle').textContent = 'Integrations & Configuration';
+                loadSettingsForm();
+            }
+            // Update active nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const target = document.querySelector(`.nav-item[data-page="${page}"]`);
+            if (target) {
+                target.classList.add('active');
+                const indicator = document.getElementById('sidebar-indicator');
+                const navItems = [...document.querySelectorAll('.nav-item')];
+                const idx = navItems.indexOf(target);
+                indicator.style.top = (20 + idx * 52 + 8) + 'px';
+            }
+        }
+
+        async function loadFullCasesList() {
+            try {
+                const r = await fetch('/api/cases');
+                const data = await r.json();
+                const panel = document.getElementById('cases-full-list');
+                if (!data.cases || data.cases.length === 0) {
+                    panel.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><div class="title">No investigations yet</div><div class="desc">Start one from the Dashboard</div></div>';
+                    return;
+                }
+                panel.innerHTML = '';
+                data.cases.forEach(c => {
+                    const row = document.createElement('div');
+                    row.className = 'cases-row';
+                    row.onclick = () => { currentCaseId = c.case_id; showInvestigationView({case_id: c.case_id, evidence_path: '/mnt/evidence'}); connectWebSocket(c.case_id); };
+                    const statusClass = c.status === 'complete' ? 'complete' : c.status === 'running' ? 'running' : 'error';
+                    row.innerHTML = '<span class="case-id">' + c.case_id + '</span><span class="status-badge ' + statusClass + '">' + capitalize(c.status) + '</span><span class="findings">' + (c.findings_count || 0) + ' findings</span><span class="accuracy">—</span><span class="time">' + (c.duration ? Math.round(c.duration) + 's' : '') + '</span>';
+                    panel.appendChild(row);
+                });
+            } catch(e) {}
+        }
+
+        async function loadMetricsView() {
+            try {
+                const r = await fetch('/api/metrics');
+                const m = await r.json();
+                document.getElementById('metrics-accuracy-full').textContent = m.accuracy ? m.accuracy + '%' : '—';
+                document.getElementById('metrics-cases-full').textContent = m.cases || 0;
+                document.getElementById('metrics-blocked-full').textContent = m.blocked || 0;
+                document.getElementById('metrics-findings-full').textContent = m.findings || 0;
+
+                const s = await (await fetch('/api/status')).json();
+                document.getElementById('mi-model').textContent = s.gemini?.model || '?';
+                document.getElementById('mi-phoenix').textContent = (s.phoenix?.mode || '?') + (s.phoenix?.connected ? ' ✓' : ' ✗');
+                document.getElementById('mi-splunk').textContent = (s.splunk?.host || '?') + ':' + (s.splunk?.port || '?') + (s.splunk?.connected ? ' ✓' : ' ✗');
+            } catch(e) {}
+        }
+
+        // --- Settings ---
+        async function loadSettingsForm() {
+            try {
+                const r = await fetch('/api/settings');
+                const s = await r.json();
+                // Splunk
+                document.getElementById('set-splunk-host').value = s.splunk.host || '';
+                document.getElementById('set-splunk-port').value = s.splunk.port || '';
+                document.getElementById('set-splunk-token').value = s.splunk.token || '';
+                // Phoenix
+                document.getElementById('set-phoenix-mode').value = s.phoenix.mode || 'local';
+                document.getElementById('set-phoenix-endpoint').value = s.phoenix.endpoint || '';
+                document.getElementById('set-phoenix-key').value = s.phoenix.api_key || '';
+                document.getElementById('set-phoenix-project').value = s.phoenix.project_name || '';
+                // Gemini
+                document.getElementById('set-gemini-project').value = s.gemini.project || '';
+                document.getElementById('set-gemini-location').value = s.gemini.location || '';
+                document.getElementById('set-gemini-model').value = s.gemini.model || 'gemini-2.5-flash';
+                // SIFT
+                document.getElementById('set-sift-mode').value = s.sift.mode || 'local';
+                document.getElementById('set-sift-evidence').value = s.sift.evidence_path || '';
+                document.getElementById('set-sift-endpoint').value = s.sift.endpoint || '';
+            } catch(e) {}
+            // Load status badges
+            loadSettingsStatus();
+        }
+
+        async function loadSettingsStatus() {
+            try {
+                const r = await fetch('/api/status');
+                const s = await r.json();
+                setBadge('splunk-status-badge', s.splunk?.connected, s.splunk?.connected ? 'v' + s.splunk.version : 'Disconnected');
+                setBadge('phoenix-status-badge', s.phoenix?.connected, s.phoenix?.connected ? s.phoenix.mode : 'Off');
+                setBadge('gemini-status-badge', s.gemini?.connected, s.gemini?.model || '?');
+                setBadge('sift-status-badge', true, s.sift?.mode || 'local');
+            } catch(e) {}
+        }
+
+        function setBadge(id, ok, text) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'status-badge ' + (ok ? 'complete' : 'error');
+        }
+
+        async function saveSettings(section) {
+            const payload = {};
+            if (section === 'splunk') {
+                payload.splunk = {
+                    host: document.getElementById('set-splunk-host').value,
+                    port: document.getElementById('set-splunk-port').value,
+                    token: document.getElementById('set-splunk-token').value,
+                };
+            } else if (section === 'phoenix') {
+                payload.phoenix = {
+                    mode: document.getElementById('set-phoenix-mode').value,
+                    endpoint: document.getElementById('set-phoenix-endpoint').value,
+                    api_key: document.getElementById('set-phoenix-key').value,
+                    project_name: document.getElementById('set-phoenix-project').value,
+                };
+            } else if (section === 'gemini') {
+                payload.gemini = {
+                    project: document.getElementById('set-gemini-project').value,
+                    location: document.getElementById('set-gemini-location').value,
+                    model: document.getElementById('set-gemini-model').value,
+                    use_vertex: true,
+                };
+            } else if (section === 'sift') {
+                payload.sift = {
+                    mode: document.getElementById('set-sift-mode').value,
+                    evidence_path: document.getElementById('set-sift-evidence').value,
+                    endpoint: document.getElementById('set-sift-endpoint').value,
+                };
+            }
+
+            const r = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const result = await r.json();
+            if (result.status === 'updated') {
+                loadSettingsStatus();
+            }
+        }
+
+        // --- Modal ---
+        function showNewInvestigationModal() {
+            document.getElementById('investigation-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('investigation-modal').classList.add('hidden');
+        }
+
+        // --- Investigation ---
+        function toggleEvidenceFields() {
+            const mode = document.getElementById('input-mode').value;
+            document.getElementById('evidence-path-group').style.display = (mode === 'splunk_only') ? 'none' : '';
+            document.getElementById('splunk-host-group').style.display = (mode === 'sift_only') ? 'none' : '';
+        }
+
+        function startInvestigation() {
+            const mode = document.getElementById('input-mode').value;
+            const evidence = document.getElementById('input-evidence').value || '/mnt/evidence';
+            const hostname = document.getElementById('input-hostname').value || '';
+            let directive = document.getElementById('input-directive').value;
+
+            // Build mode-specific directive
+            if (mode === 'splunk_only') {
+                directive = `SPLUNK-ONLY INVESTIGATION.\n${directive}\n\n` +
+                    `Instructions:\n` +
+                    `1. Query Splunk for all attack events: splunk_search("index=main sourcetype=csv${hostname ? ' host=' + hostname : ''}", "-7d")\n` +
+                    `2. Get process events: splunk_get_process_events("${hostname || '*'}")\n` +
+                    `3. Get network connections: splunk_get_network_connections("${hostname || '*'}")\n` +
+                    `4. Check IOCs across environment\n` +
+                    `5. Map findings to MITRE ATT&CK\n` +
+                    `6. Push IOCs to Splunk and create notable event\n` +
+                    `DO NOT use SIFT tools — this is a log-only investigation.`;
+            } else if (mode === 'sift_only') {
+                directive = `SIFT-ONLY INVESTIGATION on evidence at: ${evidence}\n${directive}\n\n` +
+                    `Instructions:\n` +
+                    `1. List files in evidence: sleuthkit_fls("${evidence}")\n` +
+                    `2. Check for malicious documents, executables, persistence mechanisms\n` +
+                    `3. Extract strings from suspicious files\n` +
+                    `4. Compute hashes for IOC matching\n` +
+                    `5. Check Prefetch for execution evidence\n` +
+                    `DO NOT use Splunk tools — this is disk forensics only.`;
+            } else {
+                directive = `COMBINED INVESTIGATION (Splunk + SIFT).\n${directive}\n\n` +
+                    `Evidence path: ${evidence}\n` +
+                    `${hostname ? 'Target host: ' + hostname : ''}\n\n` +
+                    `Instructions:\n` +
+                    `1. Query Splunk for attack events: splunk_search("index=main sourcetype=csv${hostname ? ' host=' + hostname : ''}", "-7d")\n` +
+                    `2. List SIFT evidence files: sleuthkit_fls("${evidence}")\n` +
+                    `3. Cross-reference Splunk logs with disk artifacts\n` +
+                    `4. Check Prefetch, scheduled tasks, and persistence\n` +
+                    `5. Map to MITRE ATT&CK, push IOCs to Splunk\n` +
+                    `6. Create notable event with full attack chain`;
+            }
+
+            closeModal();
+
+            fetch('/api/investigate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({evidence_path: evidence, directive: directive})
+            })
+            .then(r => r.json())
+            .then(data => {
+                currentCaseId = data.case_id;
+                showInvestigationView(data);
+                connectWebSocket(data.case_id);
+                addCaseToList(data);
+            })
+            .catch(err => {
+                alert('Error starting investigation: ' + err.message);
+            });
+        }
+
+        function showInvestigationView(data) {
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('investigation-view').classList.remove('hidden');
+            document.getElementById('page-title').textContent = 'Investigation';
+            document.getElementById('page-subtitle').textContent = data.case_id;
+
+            document.getElementById('ev-case').textContent = data.case_id;
+            document.getElementById('ev-path').textContent = data.evidence_path || '/mnt/evidence';
+            document.getElementById('ev-started').textContent = new Date().toLocaleTimeString();
+
+            document.getElementById('live-feed').innerHTML = '';
+            document.getElementById('findings-panel').innerHTML = '';
+            document.getElementById('findings-count').textContent = '';
+
+            const pill = document.getElementById('agent-status');
+            pill.className = 'status-pill running';
+            document.getElementById('status-text').textContent = 'Investigating...';
+
+            addFeedEntry('tool', 'orchestrator', 'Investigation started: ' + data.case_id);
+        }
+
+        function connectWebSocket(caseId) {
+            if (ws) { try { ws.close(); } catch(e){} }
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws/live/${caseId}`);
+
+            ws.onmessage = (e) => {
+                try { handleEvent(JSON.parse(e.data)); } catch(err) {}
+            };
+
+            ws.onclose = () => {
+                document.getElementById('inv-live-dot').style.display = 'none';
+                document.getElementById('inv-live-label').style.display = 'none';
+            };
+
+            ws.onopen = () => {
+                document.getElementById('inv-live-dot').style.display = '';
+                document.getElementById('inv-live-label').style.display = '';
+            };
+        }
+
+        function handleEvent(data) {
+            switch(data.type) {
+                case 'tool_call':
+                    addFeedEntry('tool', data.agent || 'agent', '🔧 ' + (data.tool || '') + '(' + (data.args || '').substring(0, 80) + ')');
+                    break;
+                case 'tool_result':
+                    addFeedEntry('tool', data.agent || 'agent', '→ ' + (data.summary || '').substring(0, 150));
+                    break;
+                case 'thinking':
+                    addFeedEntry('tool', data.agent || 'agent', '💭 ' + (data.message || '').substring(0, 200));
+                    break;
+                case 'finding':
+                    addFinding(data);
+                    addFeedEntry('finding', data.agent || 'agent', '✓ ' + data.title);
+                    addActivityEntry('finding', '✓ Finding: ' + data.title);
+                    break;
+                case 'self_correction':
+                    addFeedEntry('correction', 'guardrail', '⚠ ' + data.message);
+                    addActivityEntry('correction', '⚠ ' + (data.message || '').substring(0, 100));
+                    updateMetric('metric-corrections', 1);
+                    break;
+                case 'error':
+                    addFeedEntry('blocked', 'system', '🚫 ' + data.message);
+                    addActivityEntry('blocked', '🚫 ' + (data.message || '').substring(0, 100));
+                    break;
+                case 'complete':
+                    addFeedEntry('finding', 'orchestrator', '✅ Complete — ' + (data.finding_count || 0) + ' findings, ' + (data.blocked_count || 0) + ' blocked');
+                    addActivityEntry('finding', '✅ Investigation complete');
+                    const pill = document.getElementById('agent-status');
+                    pill.className = 'status-pill ready';
+                    document.getElementById('status-text').textContent = 'Complete';
+                    updateCaseStatus(currentCaseId, 'complete', data.finding_count || 0);
+                    loadMetrics();
+                    break;
+            }
+        }
+
+        // --- Live Feed ---
+        function addFeedEntry(type, agent, message) {
+            const feed = document.getElementById('live-feed');
+            const entry = document.createElement('div');
+            entry.className = `feed-entry ${type}`;
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            entry.innerHTML = `<div class="feed-bar"></div><div class="feed-content"><div class="feed-time">${time}</div><div class="feed-message">${message}</div></div>`;
+            feed.appendChild(entry);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function addActivityEntry(type, message) {
+            const feed = document.getElementById('activity-feed');
+            const empty = feed.querySelector('.empty-state');
+            if (empty) empty.remove();
+            document.getElementById('feed-live-dot').style.display = '';
+            document.getElementById('feed-live-label').style.display = '';
+            const entry = document.createElement('div');
+            entry.className = `feed-entry ${type}`;
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            entry.innerHTML = `<div class="feed-bar"></div><div class="feed-content"><div class="feed-time">${time}</div><div class="feed-message">${message}</div></div>`;
+            feed.insertBefore(entry, feed.firstChild);
+        }
+
+        // --- Findings ---
+        function addFinding(data) {
+            const panel = document.getElementById('findings-panel');
+            const card = document.createElement('div');
+            card.className = 'finding-card';
+            const confClass = (data.confidence || '').toLowerCase() === 'confirmed' ? 'confirmed' : 'inferred';
+            card.innerHTML = `
+                <div class="finding-header">
+                    <span class="finding-id">${data.id || ''}</span>
+                    <span class="badge ${confClass}">${data.confidence || '?'}</span>
+                </div>
+                <div class="finding-title">${data.title || ''}</div>
+                ${data.mitre ? '<span class="badge mitre">' + data.mitre + '</span>' : ''}
+                <div class="finding-actions">
+                    <button class="btn-sm btn-approve" onclick="approveFinding(this, '${data.id}')">✓ Approve</button>
+                    ${confClass === 'inferred' ? '<button class="btn-sm btn-reject" onclick="rejectFinding(\'' + data.id + '\')">Reject</button>' : ''}
+                </div>
+            `;
+            panel.appendChild(card);
+            document.getElementById('findings-count').textContent = panel.querySelectorAll('.finding-card').length + ' total';
+        }
+
+        function approveFinding(btn, id) {
+            fetch(`/api/cases/${currentCaseId}/findings/${id}/approve`, {method: 'POST'});
+            btn.textContent = '✓ Approved';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        }
+
+        function rejectFinding(id) {
+            const reason = prompt('Rejection reason:', 'Insufficient evidence');
+            if (!reason) return;
+            fetch(`/api/cases/${currentCaseId}/findings/${id}/reject`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({reason: reason})
+            });
+        }
+
+        // --- Cases List ---
+        function addCaseToList(data) {
+            cases.unshift({ id: data.case_id, status: 'running', findings: 0, accuracy: '—', time: 'now' });
+            renderCases();
+        }
+
+        function updateCaseStatus(caseId, status, findingCount) {
+            const c = cases.find(x => x.id === caseId);
+            if (c) { c.status = status; c.findings = findingCount; }
+            renderCases();
+        }
+
+        function renderCases() {
+            const panel = document.getElementById('cases-panel');
+            panel.innerHTML = '';
+            if (cases.length === 0) {
+                panel.innerHTML = `<div class="empty-state" id="no-cases"><div class="icon">🔍</div><div class="title">No investigations yet</div><div class="desc">Click "+ New Investigation" or wait for a Splunk alert</div></div>`;
+                return;
+            }
+            cases.forEach(c => {
+                const row = document.createElement('div');
+                row.className = 'cases-row';
+                row.onclick = () => { currentCaseId = c.id; showInvestigationView({case_id: c.id, evidence_path: '/mnt/evidence'}); connectWebSocket(c.id); };
+                row.innerHTML = `
+                    <span class="case-id">${c.id}</span>
+                    <span class="status-badge ${c.status}">${capitalize(c.status)}</span>
+                    <span class="findings">${c.findings} findings</span>
+                    <span class="accuracy">${c.accuracy}</span>
+                    <span class="time">${c.time}</span>
+                `;
+                panel.appendChild(row);
+            });
+        }
+
+        // --- Utilities ---
+        function updateMetric(id, increment) {
+            const el = document.getElementById(id);
+            const current = parseInt(el.textContent) || 0;
+            el.textContent = current + increment;
+        }
+
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+        // Modal close handlers
+        document.getElementById('investigation-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'n' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); showNewInvestigationModal(); }
+        });
+    </script>
+</body>
+</html>

