@@ -6,6 +6,7 @@
     <title>AEGIS-IR — Autonomous Incident Response</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/lucide-static@0.263.1/font/lucide.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -70,7 +71,9 @@
         }
         .nav-item:hover { background: var(--card); color: var(--text); }
         .nav-item.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
-        .nav-item .icon { width: 18px; text-align: center; font-size: 16px; }
+        .nav-item .icon { width: 18px; height: 18px; text-align: center; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        .nav-item:hover .icon { transform: scale(1.15); }
+        .nav-item.active .icon { transform: scale(1.1); }
         .nav-badge { margin-left: auto; background: var(--danger); color: white; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 10px; }
 
         .connection-status { margin-top: auto; padding: 12px; background: var(--card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
@@ -224,27 +227,27 @@
 
         <div class="nav-section">Main</div>
         <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
-            <span class="icon">📊</span> Dashboard
+            <span class="icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
         </div>
         <div class="nav-item" onclick="showPage('investigate')" data-page="investigate">
-            <span class="icon">🔍</span> Investigate
+            <span class="icon"><i data-lucide="search"></i></span> Investigate
         </div>
         <div class="nav-item" onclick="showPage('cases')" data-page="cases">
-            <span class="icon">📁</span> Cases
+            <span class="icon"><i data-lucide="folder-open"></i></span> Cases
             <span class="nav-badge" id="case-count">0</span>
         </div>
 
         <div class="nav-section">Observability</div>
         <div class="nav-item" onclick="showPage('traces')" data-page="traces">
-            <span class="icon">📡</span> Live Traces
+            <span class="icon"><i data-lucide="activity"></i></span> Live Traces
         </div>
         <div class="nav-item" onclick="showPage('accuracy')" data-page="accuracy">
-            <span class="icon">📈</span> Accuracy
+            <span class="icon"><i data-lucide="trending-up"></i></span> Accuracy
         </div>
 
         <div class="nav-section">Settings</div>
         <div class="nav-item" onclick="showPage('settings')" data-page="settings">
-            <span class="icon">⚙️</span> Integrations
+            <span class="icon"><i data-lucide="settings"></i></span> Integrations
         </div>
 
         <div class="connection-status">
@@ -267,22 +270,22 @@
 
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-label">🎯 Accuracy</div>
+                    <div class="metric-label"><i data-lucide="target" style="width:14px;height:14px"></i> Accuracy</div>
                     <div class="metric-value green" id="m-accuracy">—</div>
                     <div class="metric-sub">guardrail pass rate</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">📁 Cases</div>
+                    <div class="metric-label"><i data-lucide="folder" style="width:14px;height:14px"></i> Cases</div>
                     <div class="metric-value blue" id="m-cases">0</div>
                     <div class="metric-sub">investigations</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">🛡️ Blocked</div>
+                    <div class="metric-label"><i data-lucide="shield-off" style="width:14px;height:14px"></i> Blocked</div>
                     <div class="metric-value red" id="m-blocked">0</div>
                     <div class="metric-sub">hallucinations prevented</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">🔧 Tools</div>
+                    <div class="metric-label"><i data-lucide="wrench" style="width:14px;height:14px"></i> Tools</div>
                     <div class="metric-value yellow" id="m-tools">31</div>
                     <div class="metric-sub">forensic tools available</div>
                 </div>
@@ -293,24 +296,24 @@
                 <h2>Start an Investigation</h2>
                 <p>Choose how you want to investigate. The agent handles everything autonomously.</p>
                 <div class="options">
-                    <button class="btn btn-primary btn-lg" onclick="openModal('splunk')">📡 From Splunk Logs</button>
-                    <button class="btn btn-secondary btn-lg" onclick="openModal('sift')">💾 From Evidence (SIFT)</button>
-                    <button class="btn btn-secondary btn-lg" onclick="openModal('combined')">⚡ Combined</button>
+                    <button class="btn btn-primary btn-lg" onclick="openModal('splunk')"><i data-lucide="radio" style="width:16px;height:16px"></i> From Splunk Logs</button>
+                    <button class="btn btn-secondary btn-lg" onclick="openModal('sift')"><i data-lucide="hard-drive" style="width:16px;height:16px"></i> From Evidence (SIFT)</button>
+                    <button class="btn btn-secondary btn-lg" onclick="openModal('combined')"><i data-lucide="zap" style="width:16px;height:16px"></i> Combined</button>
                 </div>
             </div>
 
             <!-- Recent Activity -->
             <div class="two-col">
                 <div class="card">
-                    <div class="card-header"><span class="card-title">📁 Recent Cases</span></div>
+                    <div class="card-header"><span class="card-title"><i data-lucide="folder-open" style="width:14px;height:14px"></i> Recent Cases</span></div>
                     <div class="card-body" id="recent-cases">
-                        <div class="empty-state"><div class="empty-icon">🔍</div><h3>No investigations yet</h3><p>Start one above or wait for a Splunk alert</p></div>
+                        <div class="empty-state"><div class="empty-icon"><i data-lucide="search" style="width:32px;height:32px;opacity:0.5"></i></div><h3>No investigations yet</h3><p>Start one above or wait for a Splunk alert</p></div>
                     </div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">📡 Agent Activity</span><span class="live-badge" id="live-indicator" style="display:none">Live</span></div>
+                    <div class="card-header"><span class="card-title"><i data-lucide="activity" style="width:14px;height:14px"></i> Agent Activity</span><span class="live-badge" id="live-indicator" style="display:none">Live</span></div>
                     <div class="card-body" id="activity-feed">
-                        <div class="empty-state"><div class="empty-icon">📡</div><h3>Waiting for activity</h3><p>Events appear here in real-time</p></div>
+                        <div class="empty-state"><div class="empty-icon"><i data-lucide="radio" style="width:32px;height:32px;opacity:0.5"></i></div><h3>Waiting for activity</h3><p>Events appear here in real-time</p></div>
                     </div>
                 </div>
             </div>
@@ -319,12 +322,12 @@
         <!-- INVESTIGATION PAGE (shown during active investigation) -->
         <div id="page-investigate" class="hidden fade-in">
             <div class="page-header">
-                <h1>🔍 Active Investigation</h1>
+                <h1><i data-lucide="search" style="width:24px;height:24px;display:inline"></i> Active Investigation</h1>
                 <p id="inv-case-id">—</p>
             </div>
             <div class="investigation-grid">
                 <div class="card">
-                    <div class="card-header"><span class="card-title">📋 Evidence</span></div>
+                    <div class="card-header"><span class="card-title"><i data-lucide="clipboard-list" style="width:14px;height:14px"></i> Evidence</span></div>
                     <div class="card-body">
                         <div class="form-group"><div class="form-label">Case ID</div><div id="inv-id" style="font-size:12px;color:var(--text-secondary)">—</div></div>
                         <div class="form-group"><div class="form-label">Mode</div><div id="inv-mode" style="font-size:12px;color:var(--text-secondary)">—</div></div>
@@ -333,11 +336,11 @@
                     </div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">⚡ Live Feed</span><span class="live-badge">Live</span></div>
+                    <div class="card-header"><span class="card-title"><i data-lucide="zap" style="width:14px;height:14px"></i> Live Feed</span><span class="live-badge">Live</span></div>
                     <div class="card-body" id="live-feed" style="font-size:12px;"></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title">📋 Findings</span><span id="findings-count" style="font-size:11px;color:var(--text-muted)">0</span></div>
+                    <div class="card-header"><span class="card-title"><i data-lucide="file-check" style="width:14px;height:14px"></i> Findings</span><span id="findings-count" style="font-size:11px;color:var(--text-muted)">0</span></div>
                     <div class="card-body" id="findings-panel"></div>
                 </div>
             </div>
@@ -346,7 +349,7 @@
         <!-- SETTINGS PAGE -->
         <div id="page-settings" class="hidden fade-in">
             <div class="page-header">
-                <h1>⚙️ Integrations</h1>
+                <h1><i data-lucide="settings" style="width:24px;height:24px;display:inline"></i> Integrations</h1>
                 <p>Configure your security tools. Changes apply immediately.</p>
             </div>
             <div id="settings-content"></div>
@@ -389,7 +392,7 @@
 
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="startInvestigation()">🚀 Start Investigation</button>
+            <button class="btn btn-primary" onclick="startInvestigation()"><i data-lucide="play" style="width:14px;height:14px"></i> Start Investigation</button>
         </div>
     </div>
 </div>
@@ -601,21 +604,22 @@ async function loadSettings() {
         const r = await fetch('/api/settings');
         const s = await r.json();
         panel.innerHTML = `
-            <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">📡 Splunk SIEM</span></div><div class="card-body">
+            <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title"><i data-lucide="radio" style="width:14px;height:14px"></i> Splunk SIEM</span></div><div class="card-body">
                 <div class="two-col"><div class="form-group"><label class="form-label">Host</label><input class="form-input" id="s-splunk-host" value="${s.splunk?.host||''}"></div><div class="form-group"><label class="form-label">Port</label><input class="form-input" id="s-splunk-port" value="${s.splunk?.port||''}"></div></div>
                 <div class="form-group"><label class="form-label">Token</label><input class="form-input" id="s-splunk-token" type="password" value="${s.splunk?.token||''}"></div>
                 <button class="btn btn-primary btn-sm" onclick="saveIntegration('splunk')">Save & Test</button>
             </div></div>
-            <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">🔮 Phoenix Observability</span></div><div class="card-body">
+            <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title"><i data-lucide="eye" style="width:14px;height:14px"></i> Phoenix Observability</span></div><div class="card-body">
                 <div class="two-col"><div class="form-group"><label class="form-label">Mode</label><select class="form-input" id="s-phoenix-mode"><option value="local">Local</option><option value="cloud">Cloud</option><option value="memory">Memory</option></select></div><div class="form-group"><label class="form-label">Project</label><input class="form-input" id="s-phoenix-project" value="${s.phoenix?.project_name||''}"></div></div>
                 <div class="form-group"><label class="form-label">Endpoint</label><input class="form-input" id="s-phoenix-endpoint" value="${s.phoenix?.endpoint||''}"></div>
                 <button class="btn btn-primary btn-sm" onclick="saveIntegration('phoenix')">Save & Reconnect</button>
             </div></div>
-            <div class="card"><div class="card-header"><span class="card-title">🧠 Gemini / Vertex AI</span></div><div class="card-body">
+            <div class="card"><div class="card-header"><span class="card-title"><i data-lucide="brain" style="width:14px;height:14px"></i> Gemini / Vertex AI</span></div><div class="card-body">
                 <div class="two-col"><div class="form-group"><label class="form-label">Project</label><input class="form-input" id="s-gemini-project" value="${s.gemini?.project||''}"></div><div class="form-group"><label class="form-label">Region</label><input class="form-input" id="s-gemini-region" value="${s.gemini?.location||''}"></div></div>
                 <div class="form-group"><label class="form-label">Model</label><select class="form-input" id="s-gemini-model"><option value="gemini-2.5-flash">gemini-2.5-flash</option><option value="gemini-2.5-pro">gemini-2.5-pro</option></select></div>
                 <button class="btn btn-primary btn-sm" onclick="saveIntegration('gemini')">Save</button>
             </div></div>`;
+        if(window.lucide) lucide.createIcons();
         document.getElementById('s-phoenix-mode').value = s.phoenix?.mode || 'local';
         document.getElementById('s-gemini-model').value = s.gemini?.model || 'gemini-2.5-flash';
     } catch(e) { panel.innerHTML = '<div class="error-banner">⚠️ Could not load settings</div>'; }
@@ -638,6 +642,9 @@ function showError(msg) {
 }
 
 function viewCase(caseId) { currentCaseId = caseId; showInvestigation({case_id: caseId}); connectWS(caseId); }
+
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', () => { if(window.lucide) lucide.createIcons(); });
 </script>
 </body>
 </html>
