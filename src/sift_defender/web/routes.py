@@ -16,6 +16,21 @@ from fastapi.templating import Jinja2Templates
 
 from sift_defender.web.investigation_runner import InvestigationRunner
 
+# Case persistence — store completed cases in memory (survives during runtime)
+_completed_cases: list[dict] = []
+
+
+def _save_case_result(case_id: str, runner):
+    """Save completed case to persistent storage."""
+    _completed_cases.append({
+        "case_id": case_id,
+        "status": runner.status,
+        "findings_count": len(runner.findings),
+        "blocked_count": len(runner.blocked_findings),
+        "duration": round(time.time() - runner.start_time, 1) if runner.start_time else 0,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    })
+
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 pages_router = APIRouter()
@@ -160,7 +175,12 @@ async def list_cases():
             "duration": round(time.time() - runner.start_time, 1) if runner.start_time else 0,
         })
 
-    # Show demo cases when no real investigations exist
+    # Include completed cases from persistence
+    for c in _completed_cases:
+        if c["case_id"] not in [r["case_id"] for r in result]:
+            result.append(c)
+
+    # Show demo cases only when absolutely no cases exist
     if not result:
         result = [
             {"case_id": "ALERT-20250709-143022", "status": "complete", "findings_count": 5, "blocked_count": 1, "duration": 47.2},
