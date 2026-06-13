@@ -45,3 +45,10 @@ check_*.py
 debug_*.py
 verify_*.py
 audit_tools.py
+
+# Setup/patch scripts (contain secrets)
+setup_cloud_db.py
+seed_roles.py
+patch_*.py
+update_dashboard.py
+check_cloud.py
