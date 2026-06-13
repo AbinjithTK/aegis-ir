@@ -131,49 +131,86 @@ The entire process is traced through **Arize Phoenix** for full observability an
 
 ## Quick Start: Try the Live Demo (No Setup Required)
 
-The deployed version at **https://aegis-ir-872369929690.us-central1.run.app** lets you explore the platform immediately:
+Open **https://aegis-ir-872369929690.us-central1.run.app** in your browser and follow along:
 
-### What You Can Do on the Live Demo
+### Step 1: Dashboard (Home Page)
 
-| Action | How | What You'll See |
-|--------|-----|-----------------|
-| **View Dashboard** | Open the URL | Metrics (accuracy, cases, blocked hallucinations, tools) |
-| **Start Investigation** | Click "Splunk Logs" → "Start" | Agent starts running, live feed shows tool calls |
-| **View Cases** | Click "Cases" in sidebar | Investigation history with status and findings |
-| **Check Accuracy** | Click "Accuracy" in sidebar | Guardrail pipeline explanation + metrics |
-| **See Traces** | Click "Live Traces" in sidebar | Phoenix observability info + mode |
-| **Configure Tools** | Click "Integrations" in sidebar | Splunk, Phoenix, Gemini, SIFT settings |
-| **Test API** | Visit `/api/docs` | Interactive Swagger UI for all 18 endpoints |
+When you open the link, you'll see the AEGIS-IR dashboard with:
+- **Accuracy** — guardrail pass rate (how often the agent produces factual results)
+- **Cases** — number of investigations completed
+- **Blocked** — hallucinations caught and prevented by the guardrail
+- **Tools** — 31 forensic tools available to the agent
 
-### Limitations of the Cloud Version
+### Step 2: Start an Investigation
 
-The live demo runs on Cloud Run without a local Splunk instance. This means:
-- The agent **starts and runs** (Gemini works) but has limited data to investigate
-- Phoenix is in **memory mode** (traces exist but no separate Phoenix UI)
-- SIFT tools are not installed in the container
+1. Click the **"Splunk Logs"** button (blue, center of page)
+2. A modal opens — leave the defaults and click **"Start"**
+3. You're taken to the **Investigation View** where the agent works in real-time
 
-**For the full experience** (agent + Splunk data + Phoenix traces + findings + guardrails), follow the local setup guide below.
+**What happens behind the scenes:**
+- Gemini 2.5 Flash starts reasoning about what to investigate
+- The agent calls Splunk tools to search for attack events
+- Each finding passes through the anti-hallucination guardrail
+- Results appear in the **Findings** panel on the right
 
-### API Endpoints You Can Test
+> Note: On the cloud version, Splunk is not locally accessible so the agent may complete quickly with no findings. For the full demo with attack data, use the local setup below.
 
-```bash
-# Health check
-curl https://aegis-ir-872369929690.us-central1.run.app/api/health
+### Step 3: View Cases
 
-# View metrics
-curl https://aegis-ir-872369929690.us-central1.run.app/api/metrics
+Click **"Cases"** in the left sidebar to see all investigations with:
+- Case ID and status (running / complete)
+- Number of findings and blocked hallucinations
+- Investigation duration
 
-# Start an investigation
-curl -X POST https://aegis-ir-872369929690.us-central1.run.app/api/investigate \
-  -H "Content-Type: application/json" \
-  -d '{"evidence_path": "/mnt/evidence", "directive": "Investigate for signs of compromise"}'
+Click any case to re-open its live feed and findings.
 
-# Check cases
-curl https://aegis-ir-872369929690.us-central1.run.app/api/cases
+### Step 4: Check Accuracy
 
-# View system status
-curl https://aegis-ir-872369929690.us-central1.run.app/api/status
-```
+Click **"Accuracy"** in the sidebar. This page shows:
+- **Approved** — findings that were backed by real evidence
+- **Flagged** — findings that need human review
+- **Blocked** — fabricated findings caught by the guardrail
+
+It also explains how the guardrail pipeline works (APPROVE / FLAG / BLOCK).
+
+### Step 5: View Live Traces
+
+Click **"Live Traces"** in the sidebar. This shows:
+- Phoenix observability mode and project name
+- Explanation of what gets traced (tool calls, LLM reasoning, evaluations)
+
+In the full local setup, you'd see an actual Phoenix UI at `localhost:6006` with every span visualized.
+
+### Step 6: Configure Integrations
+
+Click **"Integrations"** in the sidebar. You'll see settings for:
+- **Splunk SIEM** — Host, port, authentication token
+- **Phoenix** — Mode (local/cloud/memory), endpoint, project
+- **Gemini / Vertex AI** — GCP project, region, model selection
+- **SIFT Forensic Tools** — Mode (local/cloud), evidence path, gRPC endpoint
+
+These save immediately and the agent uses the new config on the next investigation.
+
+### Step 7: Test the API
+
+Visit **https://aegis-ir-872369929690.us-central1.run.app/api/docs** for interactive Swagger documentation. You can test all 18 endpoints directly from the browser:
+
+- `GET /api/health` — server health check
+- `GET /api/metrics` — accuracy, cases, blocked count
+- `GET /api/status` — connection status of all integrations
+- `POST /api/investigate` — start a new investigation
+- `GET /api/cases` — list all cases
+- `POST /api/splunk-alert` — simulate a Splunk alert webhook
+- `GET /api/observability/accuracy-trend` — 30-day guardrail metrics (requires auth)
+- `GET /api/observability/traces/{case_id}` — live trace spans (requires auth)
+
+### What the Sidebar Status Dots Mean
+
+At the bottom of the sidebar, you'll see connection status:
+- 🟢 **Green dot** = connected and working
+- 🔴 **Red dot** = not reachable from this deployment
+
+On Cloud Run: Gemini shows green (connected via Vertex AI). Splunk and Phoenix may show red since they're configured for localhost.
 
 ---
 
