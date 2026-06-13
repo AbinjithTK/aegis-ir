@@ -129,6 +129,54 @@ The entire process is traced through **Arize Phoenix** for full observability an
 
 ---
 
+## Quick Start: Try the Live Demo (No Setup Required)
+
+The deployed version at **https://aegis-ir-872369929690.us-central1.run.app** lets you explore the platform immediately:
+
+### What You Can Do on the Live Demo
+
+| Action | How | What You'll See |
+|--------|-----|-----------------|
+| **View Dashboard** | Open the URL | Metrics (accuracy, cases, blocked hallucinations, tools) |
+| **Start Investigation** | Click "Splunk Logs" → "Start" | Agent starts running, live feed shows tool calls |
+| **View Cases** | Click "Cases" in sidebar | Investigation history with status and findings |
+| **Check Accuracy** | Click "Accuracy" in sidebar | Guardrail pipeline explanation + metrics |
+| **See Traces** | Click "Live Traces" in sidebar | Phoenix observability info + mode |
+| **Configure Tools** | Click "Integrations" in sidebar | Splunk, Phoenix, Gemini, SIFT settings |
+| **Test API** | Visit `/api/docs` | Interactive Swagger UI for all 18 endpoints |
+
+### Limitations of the Cloud Version
+
+The live demo runs on Cloud Run without a local Splunk instance. This means:
+- The agent **starts and runs** (Gemini works) but has limited data to investigate
+- Phoenix is in **memory mode** (traces exist but no separate Phoenix UI)
+- SIFT tools are not installed in the container
+
+**For the full experience** (agent + Splunk data + Phoenix traces + findings + guardrails), follow the local setup guide below.
+
+### API Endpoints You Can Test
+
+```bash
+# Health check
+curl https://aegis-ir-872369929690.us-central1.run.app/api/health
+
+# View metrics
+curl https://aegis-ir-872369929690.us-central1.run.app/api/metrics
+
+# Start an investigation
+curl -X POST https://aegis-ir-872369929690.us-central1.run.app/api/investigate \
+  -H "Content-Type: application/json" \
+  -d '{"evidence_path": "/mnt/evidence", "directive": "Investigate for signs of compromise"}'
+
+# Check cases
+curl https://aegis-ir-872369929690.us-central1.run.app/api/cases
+
+# View system status
+curl https://aegis-ir-872369929690.us-central1.run.app/api/status
+```
+
+---
+
 ## Setup Guide (For Judges & Testers)
 
 ### Prerequisites
